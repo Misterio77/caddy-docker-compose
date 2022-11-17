@@ -1,0 +1,48 @@
+version: "3.3"
+
+volumes:
+  database: # Esse volume guarda dados, deve-se fazer backups
+  caddy: # Esse volume guarda certificados, não tem problema apagar
+
+secrets:
+  # A senha da base é obtida do arquivo database_password.secret
+  # É bom alterá-la, mas a base não é acessível externamente, de qualquer forma.
+  database_password:
+    file: ./database_password.secret
+
+services:
+  database:
+    image: mariadb:10.9
+    volumes:
+      - database:/var/lib/mysql
+    secrets:
+      - database_password
+    environment:
+      MARIADB_DATABASE: wordpress
+      MARIADB_USER: wordpress
+      MARIADB_PASSWORD_FILE: /run/secrets/database_password
+      MARIADB_RANDOM_ROOT_PASSWORD: true
+
+  wordpress:
+    image: wordpress:6.1-apache
+    depends_on:
+      - database
+    secrets:
+      - database_password
+    environment:
+      WORDPRESS_DB_HOST: database
+      WORDPRESS_DB_USER: wordpress
+      WORDPRESS_DB_NAME: wordpress
+      WORDPRESS_DB_PASSWORD_FILE: /run/secrets/database_password
+      WORDPRESS_TABLE_PREFIX: wp
+
+  caddy:
+    image: caddy:2.6-alpine
+    depends_on:
+      - wordpress
+    command: caddy reverse-proxy --from ${DOMAIN:-localhost} --to wordpress:80
+    volumes:
+      - caddy:/data
+    ports:
+      - 80:80
+      - 443:443
