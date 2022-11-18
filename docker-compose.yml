@@ -5,10 +5,10 @@ volumes:
   caddy: # Esse volume guarda certificados, não tem problema apagar
 
 secrets:
-  # A senha da base é obtida do arquivo database_password.secret
-  # É bom alterá-la, mas a base não é acessível externamente, de qualquer forma.
+  # A senha da base é obtida do arquivo db_pass.secret
+  # Pode ser gerado usando ./generate_pass.sh
   database_password:
-    file: ./database_password.secret
+    file: ./db_pass.secret
 
 services:
   database:
